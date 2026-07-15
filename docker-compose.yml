@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL
+  postgres_db:
+    image: postgres:15-alpine
+    container_name: fantasy_postgres
+    environment:
+      POSTGRES_USER: sa
+      POSTGRES_PASSWORD: 159741
+      POSTGRES_DB: FantasyFootballDb
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # 2. Redis
+  redis_cache:
+    image: redis:alpine
+    container_name: fantasy_redis
+    ports:
+      - "6379:6379"
+
+  # 3. RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: fantasy_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+volumes:
+  pgdata:

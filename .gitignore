@@ -1,0 +1,24 @@
+﻿## User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+x64/
+x86/
+build/
+bin/
+obj/
+
+## Rider and JetBrains
+.idea/
+*.sln.iml
+
+## OS generated files
+.DS_Store
+Thumbs.db
