@@ -12,6 +12,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScoringWorker", "src\Scorin
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LeaderboardWorker", "src\LeaderboardWorker\LeaderboardWorker\LeaderboardWorker.csproj", "{5D340773-8978-4CC5-8BBE-651C5E23F49F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Data", "Data\Data.csproj", "{1375575C-7F47-4E1F-9AEE-446F420D5BF5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,5 +47,9 @@ Global
 		{5D340773-8978-4CC5-8BBE-651C5E23F49F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5D340773-8978-4CC5-8BBE-651C5E23F49F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5D340773-8978-4CC5-8BBE-651C5E23F49F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1375575C-7F47-4E1F-9AEE-446F420D5BF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1375575C-7F47-4E1F-9AEE-446F420D5BF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1375575C-7F47-4E1F-9AEE-446F420D5BF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1375575C-7F47-4E1F-9AEE-446F420D5BF5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
