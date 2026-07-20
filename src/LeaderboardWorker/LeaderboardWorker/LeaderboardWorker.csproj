@@ -8,6 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="MassTransit.AspNetCore" Version="9.2.0-develop.155" />
+        <PackageReference Include="MassTransit.RabbitMQ" Version="9.2.0-develop.155" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.17"/>
     </ItemGroup>
 

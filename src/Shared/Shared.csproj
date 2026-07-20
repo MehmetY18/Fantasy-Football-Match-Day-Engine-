@@ -11,4 +11,9 @@
       <Folder Include="Events\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="MassTransit.AspNetCore" Version="9.2.0-develop.155" />
+      <PackageReference Include="MassTransit.RabbitMQ" Version="9.2.0-develop.155" />
+    </ItemGroup>
+
 </Project>
