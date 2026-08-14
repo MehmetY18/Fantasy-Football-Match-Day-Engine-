@@ -8,6 +8,6 @@ public class Match
     public DateTime kickoff  { get; set; }
     public string status { get; set; }
     public int gameweek { get; set; }
-    public MatchScore Score { get; set; }
+    public MatchScore? Score { get; set; }
     public int? minute { get; set; }
 }
