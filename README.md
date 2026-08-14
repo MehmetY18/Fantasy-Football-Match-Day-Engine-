@@ -73,7 +73,7 @@ PostgreSQL, Redis ve RabbitMQ gibi harici bağımlılıkların geliştirici bilg
 ---
 ---
 
-## 🇬🇧 English (EN)
+##  🇺🇸 English (EN)
 
 ### Architectural Decisions
 
