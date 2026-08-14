@@ -27,12 +27,15 @@ Milyonlarca kullanıcının anlık olarak fantezi puanlarının hesaplandığı 
 #### 4. Bağımlılık ve Veritabanı Yönetimi (`IServiceScopeFactory`)
 Arka plandaki Worker servislerinin veritabanı bağlamı (`AppDbContext`) ile çakışmasını engellemek, bellek sızıntılarına yol açmamak ve işlemlerin güvenli (thread-safe) yürümesini sağlamak adına her periyotta `IServiceScopeFactory` kullanılarak izole bir scope yaratılmıştır.
 
-#### 5. PostgreSQL ve Entity Framework Core
-Uygulama mock JSON dosyalarından beslendiği için PostgreSQL'in **JSONB** özelliği kullanılarak NoSQL esnekliği, SQL'in ACID gücüyle birleştirilmiştir. Canlı maç anlarında oluşacak devasa yazma ve okuma yükünü taşımak adına PostgreSQL'in **BRIN, GIN ve GiST** indeksleme türlerinden faydalanılmıştır.  
-Veri erişim katmanında (ORM) ise Code-First Migrations kolaylığı, akıllı sorgu optimizasyonları ve `Include / ThenInclude` operasyonlarıyla N+1 gibi popüler performans problemlerini kolayca çözebilme yeteneği sunduğu için **EF Core** tercih edilmiştir. Ayrıca Redis önbelleğinde bulunamayan veriler veritabanından çekerken LINQ `Contains` ile toplu sorgu (`WHERE id IN (...)`) atılarak N+1 veritabanı yükü tamamen engellenmiştir.
+### 5. PostgreSQL ve Entity Framework Core
+Uygulamanın ana veri depolama katmanında ilişkisel veritabanı (RDBMS) standartlarına ve ACID (Tutarlılık ve Güvenilirlik) garantisine tam uymak adına **PostgreSQL** tercih edilmiştir. Mock JSON dosyalarından akan verilerin ilişkisel tablolara (User, Team, Squad, SquadPlayer, Player, PlayerStats, Match, MatchScore, Fixture) normalize edilerek dağıtılması sağlanmıştır.
+
+Veri erişim katmanında (ORM) ise **Entity Framework Core** kullanılmıştır. EF Core bize şu kurumsal avantajları sağlamıştır:
+- **Code-First ve Geçiş Yönetimi:** Veritabanı şemasını C# sınıfları üzerinden türetip, `Migrations` mekanizmasıyla veritabanı yönetimini kolaylaştırdı.
+- **Sorgu Optimizasyonu (Performans):** Kadro verilerini çekerken `.Include(s => s.Players)` operasyonlarıyla ilişkili tablolar tek seferde yüklenmiştir. Ayrıca, Redis önbelleğinde bulunamayan verileri veritabanından çekerken veya kadro toplam puanlarını hesaplarken LINQ `.Contains()` yapısı kullanılmıştır. Bu sayede PostgreSQL arkada toplu sorgu (`WHERE id = ANY (@array)`) işleterek 15 farklı oyuncu için veritabanına 15 kere döngüyle gitmek yerine tek bir sorguyla işi bitirmiş, sinsi N+1 veritabanı yükünü tamamen engellemiştir.
 
 #### 6. Docker & Docker Compose ile Altyapı İzolasyonu
-PostgreSQL, Redis ve RabbitMQ gibi harici bağımlılıkların geliştirici bilgisayarından bağımsız, izole ve tekrarlanabilir (reproducible) bir ortamda çalışması için konteyner mimarisi (Docker) tercih edilmiştir. `docker-compose.yml` dosyası sayesinde tüm veri depoları ve mesaj kuyrukları tek bir komutla (`docker-compose up -d`) sağlık kontrolleri (Health Checks) yapılandırılmış şekilde başlatılabilir.
+PostgreSQL, Redis ve RabbitMQ gibi harici bağımlılıkların geliştirici bilgisayarından bağımsız, izole ve tekrarlanabilir (reproducible) bir ortamda çalışması için konteyner mimarisi (Docker) tercih edilmiştir. `docker-compose.yml` dosyası sayesinde tüm veri depoları ve mesaj kuyrukları tek bir komutla (`docker-compose up -d`) başlatılabilir.
 
 ---
 
@@ -59,7 +62,7 @@ PostgreSQL, Redis ve RabbitMQ gibi harici bağımlılıkların geliştirici bilg
 * **Neden Tercih Edildi:** Veritabanına oyuncuyu yazıp RabbitMQ'ya mesaj atarken event'ler kaybolabilirdi bunun olmaması için kullanıldı.
 
 #### 5. Zarf (Envelope) ve REST Mimarisi
-* **Verilen Kararlar:** Tüm istekleri devasa payload alanları ve POST metoduyla göndermek yerine; HTTP metotlarına (GET, POST, DELETE), route parametrelerine ve Query String'lere dayalı standart RESTful API mimarisine uygun olarak geliştirilmiştir. Ancak sunucu tarafında veri takibi (Distributed Tracing) sağlamak amacıyla `requestId` gibi meta-veriler HTTP Header katmanına (`X-Request-Id`) taşınmıştır.
+* **Verilen Kararlar:** Tüm istekleri devasa payload alanları ve POST metoduyla göndermek yerine; HTTP metotlarına (GET, POST, DELETE), route parametrelerine ve Query String'lere dayalı standart RESTful API mimarisine uygun olarak geliştirilmiştir.
 * **Trade Off (Maliyet/Kayıp):**
   1. **URL Uzunluk Sınırı (URL Truncation) Riski:** Gelecekte eklenebilecek çok karmaşık ve devasa filtre senaryolarında HTTP protokolünün URL uzunluk sınırlarına (genelde 2048 karakter) takılma riski ve maliyeti kabul edilmiştir.
   2. **Protokol Bağımlılığı (Protocol Coupling):** İzleme verilerinin HTTP Header'larına kurgulanması mimariyi HTTP'ye bağlar. İleride WebSocket veya SignalR gibi çift yönlü (duplex) hatlara geçildiğinde bu izleme verilerini taşımak için özel bir zarf katmanı yazılması gerekecektir.
@@ -94,12 +97,16 @@ Executing heavy `ORDER BY` queries on a relational database for a highly volatil
 #### 4. Dependency and Database Scope Management (`IServiceScopeFactory`)
 Since background tasks run within a Singleton lifespan, directly injecting a Scoped database context (`AppDbContext`) introduces severe memory leaks and thread-safety violations. To prevent this architectural risk, an isolated short-lived scope is explicitly generated via `IServiceScopeFactory` during each execution interval, ensuring thread-safe database interactions.
 
-#### 5. PostgreSQL and Entity Framework Core
-**PostgreSQL** was selected as the primary relational persistence layer. Utilizing PostgreSQL's **JSONB** engine allows the application to balance NoSQL structural flexibility with raw SQL ACID guarantees when processing raw mock JSON payloads. To sustain high write/read peaks during active simulations, **BRIN, GIN, and GiST** indexing mechanisms are strategically applied.  
-**EF Core** was chosen as the Object-Relational Mapper (ORM) to leverage Code-First Migrations, type-safe LINQ query evaluation, and to resolve performance issues like the N+1 problem through smart `.Select()` projections. Furthermore, cache-miss fallbacks utilize LINQ `Contains` expressions to evaluate batch SQL queries (`WHERE id IN (...)`), effectively eliminating N+1 database round-trip overhead during user lookups.
+### 5. PostgreSQL and Entity Framework Core
+**PostgreSQL** was selected as the primary relational persistence layer to enforce absolute data integrity and ACID guarantees across normalized tables (Users, Squads, Players, SquadPlayers). 
+
+**EF Core** was enforced as the Object-Relational Mapper (ORM) providing distinct corporate advantages:
+- **Code-First & Migration Pipelines:** Managed database schemas directly through C# classes, ensuring automated deployment controls.
+- **Query Optimization & Performance:** Eager loading via `.Include(s => s.Players)` was implemented to fetch multi-level relational data efficiently. Furthermore, during cache misses or total score calculations, the LINQ `.Contains()` pattern was leveraged. This prompts PostgreSQL to execute a single high-performance batch evaluation under the hood (`WHERE id = ANY (@array)`), effectively bypassing heavy iterative loops for 15 individual players and completely eliminating the N+1 database read bottleneck.
+
 
 #### 6. Containerized Infrastructure with Docker & Docker Compose
-To decouple external infrastructure dependencies (PostgreSQL, Redis, and RabbitMQ) from local developer environments and guarantee cross-platform execution consistency, a containerized architecture was implemented via Docker. Configured with native health check policies inside `docker-compose.yml`, the entire infrastructure stack can be provisioned seamlessly with a single `docker-compose up -d` execution.
+All external infrastructure components required by the system, including PostgreSQL, Redis, and RabbitMQ, are provisioned via the `docker-compose.yml` file in the root directory and can be launched instantly with a single command (`docker-compose up -d`).
 
 ---
 
@@ -126,7 +133,7 @@ To decouple external infrastructure dependencies (PostgreSQL, Redis, and RabbitM
 - **Justification:** Publishing events directly to RabbitMQ during a database write transaction introduces split-brain risks if network partitions occur. Sacrificing an extra database write step ensures absolute atomicity and zero message loss.
 
 #### 5. API Boundary: RESTful Design vs. Strict Message Envelopes
-- **Decision:** Shifted from bulky POST-body RPC messages to a clean, resource-oriented RESTful architecture utilizing standard HTTP verbs (GET, POST, DELETE), path parameters, and Query Strings. Distributed tracing metadata (`requestId`) is refactored into native HTTP Header properties (`X-Request-Id`).
+- **Decision:** Shifted from bulky POST-body RPC messages to a clean, resource-oriented Saf RESTful architecture utilizing standard HTTP verbs (GET, POST, DELETE), path parameters, and Query Strings.
 - **Trade-off (Cons):**
   1. **URL Truncation Risks:** Since filtering structures are decoupled from the request payload body and mapped onto URL Query Strings, highly complex reporting queries accept the architectural risk of hitting maximum HTTP URL character length thresholds (typically 2048 characters).
   2. **Protocol Coupling:** Passing tracking parameters through specific HTTP Header bindings maps the current schema directly onto stateless HTTP behaviors. Moving towards full-duplex persistent streams (like WebSockets or SignalR) down the line will require a custom metadata envelope migration layer.
